@@ -1,4 +1,4 @@
-// server.jsx
+// server.js (or server.jsx)
 const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
@@ -7,16 +7,21 @@ const fs = require('fs');
 
 const app = express();
 app.use(cors());
-app.use('/uploads', express.static('uploads'));
 
-// Ensure uploads directory exists
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
+// Set upload path to Render-safe directory
+const uploadPath = '/tmp/uploads';
+
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath);
 }
 
+// Serve uploaded files
+app.use('/uploads', express.static(uploadPath));
+
+// Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
@@ -36,9 +41,9 @@ app.post('/upload', upload.single('file'), (req, res) => {
   });
 });
 
-// Get files endpoint
+// List uploaded files
 app.get('/files', (req, res) => {
-  fs.readdir('uploads', (err, files) => {
+  fs.readdir(uploadPath, (err, files) => {
     if (err) {
       return res.status(500).send('Error reading files');
     }
